@@ -1,0 +1,11 @@
+Authors
+-------
+* David Lindenbaum <dlindenbaum@iqt.org>
+
+
+
+### Significant work modified from bassis created by
+* Adam Van Etten <@avanetten>
+
+
+
