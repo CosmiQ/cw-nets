@@ -18,9 +18,10 @@ with open('README.rst') as f:
 inst_reqs = ["cw-tiler", "tensorflow-gpu", "keras", "scikit-learn"]
 
 extra_reqs = {
-    'test': ['mock', 'pytest', 'pytest-cov', 'codecov']}
-    'gpu' : ['tensorflow-gpu']
+    'test': ['mock', 'pytest', 'pytest-cov', 'codecov'],
+    'gpu' : ['tensorflow-gpu'],
     'cpu' : ['tensorflow']
+}
         
 
 setup(name='cw_nets',
