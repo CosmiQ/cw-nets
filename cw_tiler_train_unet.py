@@ -54,14 +54,15 @@ n_channels =8
 n_width = 800
 n_height = 800
 n_classes = 1
-batch_size = 5
+batch_size = 7
 params={"dim": (n_width, n_height),
        "batch_size": batch_size,
         "n_classes":n_classes,
         "n_channels":n_channels,
         "shuffle":True,
         "max_value": -1, # Use Max Value of Chip or you can specify a max value to normalize by
-        "img_norm": "divide" #Divide by max value and normalize to 0,1
+        "img_norm": "divide", #Divide by max value and normalize to 0,1
+        "low_ram": True
        }
 
 
@@ -75,20 +76,20 @@ validation_generator = RasterDataGenerator(image_list_test, label_list_test, **p
 
  # set callbacks
 print ("Setting callbacks...")
-model_name = "AOI_6_unet_model_v1"
-early_stopping_patience = 4
+model_name = "AOI_6_unet_model_v4"
+early_stopping_patience = 8
 
 model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss', 
                                            save_best_only=True)
 early_stopping = EarlyStopping(monitor='val_loss', 
                                        patience=early_stopping_patience, 
                                        verbose=1, mode='auto')
-tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True,                    write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
+tensorboard = TensorBoard(log_dir='./logs/AOI_6_v4', histogram_freq=0, batch_size=32, write_graph=True,                    write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
 
 print ("Callbacks successfully set")
 
 
-epochs=100
+epochs=1000
 
 
 

@@ -6,7 +6,7 @@ from scipy.ndimage.interpolation import zoom
 class RasterDataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, labels, batch_size=32, dim=(1200,1200), n_channels=8,
-                 n_classes=2, shuffle=True, max_value=-1, img_norm="divide"):
+                 n_classes=2, shuffle=True, max_value=-1, img_norm="divide", low_ram=True):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -18,6 +18,13 @@ class RasterDataGenerator(keras.utils.Sequence):
         self.on_epoch_end()
         self.max_value=max_value
         self.img_norm=img_norm
+        self.low_ram=low_ram
+        
+        if low_ram:
+            pass
+        else:
+            self.__loadtiffs()
+            
         
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -27,14 +34,19 @@ class RasterDataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+        
+        if self.low_ram:
+            # Find list of IDs
+            list_image_temp = [self.list_IDs[k] for k in indexes]
+            list_labels_temp = [self.labels[k] for k in indexes]
 
-        # Find list of IDs
-        list_image_temp = [self.list_IDs[k] for k in indexes]
-        list_labels_temp = [self.labels[k] for k in indexes]
 
-
-        # Generate data
-        X, y = self.__data_generation(list_image_temp, list_labels_temp)
+            # Generate data
+            X, y = self.__data_generation(list_image_temp, list_labels_temp)
+        else:
+            
+            X = np.asarray([self.X[k] for k in indexes])
+            y = np.asarray([self.y[k] for k in indexes])
 
         return X, y
 
@@ -58,6 +70,41 @@ class RasterDataGenerator(keras.utils.Sequence):
                 data = src.read().astype(float)
                 
                 if self.max_value==-1:
+                    max_value = np.max(data)
+                else:
+                    max_value = self.max_value
+                
+                if self.img_norm == "divide":    
+                    X[i,] = np.clip(data*1.0/max_value, 0, 1)
+                
+                elif self.img_norm == "sub_and_divide":
+                    X[i,] = np.clip((data*1.0/(max_value/2) - 1), -1, 1)
+
+                
+            with rasterio.open(ID[1]) as src:
+                # Store class
+                #data = src.read()[0]
+                y[i] = src.read()
+        
+        
+
+        return X, y
+    
+    
+    def __loadtiffs(self):
+        
+        totalLength = len(self.list_IDs)
+        X = np.empty((totalLength, self.n_channels, *self.dim))
+        y = np.empty((totalLength, self.n_classes, *self.dim))
+
+        
+        # Generate data
+        for i, ID in enumerate(zip(self.list_IDs, self.labels)):
+            # Store sample
+            with rasterio.open(ID[0]) as src:
+                data = src.read().astype(float)
+                
+                if self.max_value==-1:
                     self.max_value = np.max(data)
                 
                 if self.img_norm == "divide":    
@@ -71,7 +118,11 @@ class RasterDataGenerator(keras.utils.Sequence):
                 # Store class
                 #data = src.read()[0]
                 y[i] = src.read()
+                
+        self.X = X
+        self.y = y
         
         
 
         return X, y
+    
