@@ -69,15 +69,15 @@ RUN git clone https://github.com/circulosmeos/gdown.pl.git /opt/code/gdown.pl
 # Install Teranaus
 
 RUN mkdir -p /opt/code/TernausNetV2
-RUN git clone https://github.com/ternaus/TernausNetV2.git /opt/code/TernausNetV2/
+RUN git clone -b bigTiff --single-branch https://github.com/dlindenbaum/TernausNetV2.git /opt/code/TernausNetV2/
 RUN cd /opt/code/TernausNetV2/modules \
         && chmod +x build.sh \
         && ./build.sh \
         && source /opt/conda/bin/activate /opt/conda/envs/cw-nets \
         && python build.py
 
-RUN echo "export PYTHONPATH=/opt/code/TernausNetV2:$PYTHONPATH" >> ~/.bashrc
-
+RUN source /opt/conda/bin/activate /opt/conda/envs/cw-nets && \
+        pip install -e .
 
 RUN mkdir -p /opt/code/TernausNetV2/weights/ \
      && /opt/code/gdown.pl/gdown.pl https://drive.google.com/uc?id=1k95VGNZG74Vvu-X-MSpbaHjMDvNEepIi /opt/code/TernausNetV2/weights/deepglobe_buildings.pt
