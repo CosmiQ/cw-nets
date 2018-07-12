@@ -76,6 +76,9 @@ RUN cd /opt/code/TernausNetV2/modules \
         && source /opt/conda/bin/activate /opt/conda/envs/cw-nets \
         && python build.py
 
+RUN echo "export PYTHONPATH=/opt/code/TernausNetV2:$PYTHONPATH" >> ~/.bashrc
+
+
 RUN mkdir -p /opt/code/TernausNetV2/weights/ \
      && /opt/code/gdown.pl/gdown.pl https://drive.google.com/uc?id=1k95VGNZG74Vvu-X-MSpbaHjMDvNEepIi /opt/code/TernausNetV2/weights/deepglobe_buildings.pt
 
