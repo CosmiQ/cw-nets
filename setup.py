@@ -15,7 +15,7 @@ with open('README.rst') as f:
     readme = f.read()
 
 # Runtime requirements.
-inst_reqs = ["cw-tiler", "tensorflow-gpu", "keras", "scikit-learn"]
+inst_reqs = ["cw-tiler", "tensorflow-gpu", "keras", "scikit-learn", "torch", "torchvision"]
 
 extra_reqs = {
     'test': ['mock', 'pytest', 'pytest-cov', 'codecov'],
