@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.1-cudnn7-runtime-ubuntu16.04
+FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04
 
 LABEL maintainer="DLindenbaum <https://github.com/dlindenbaum>"
 
@@ -52,12 +52,37 @@ RUN /opt/conda/bin/conda create -n cw-nets python=3.6 pip cython
 RUN /opt/conda/bin/conda install --name cw-nets \
                                 rtree \
                                 gdal
-                                
+
+# Install Cosmiq Tools
 RUN source /opt/conda/bin/activate /opt/conda/envs/cw-nets && \
         conda update pip && \
         conda install pytorch torchvision cuda91 -c pytorch && \
         pip install git+https://github.com/CosmiQ/cw-tiler.git@dataset_creation && \
         pip install git+https://github.com/CosmiQ/cw-nets.git@pytorch_generator
+        
+
+# Install Perl Script for Google Drive Download
+RUN mkdir -p /opt/code/gdown.pl
+RUN git clone https://github.com/circulosmeos/gdown.pl.git /opt/code/gdown.pl
+
+
+# Install Teranaus
+
+RUN mkdir -p /opt/code/TernausNetV2
+RUN git clone https://github.com/ternaus/TernausNetV2.git /opt/code/TernausNetV2/
+RUN cd /opt/code/TernausNetV2/modules \
+        && chmod +x build.sh \
+        && ./build.sh \
+        && source /opt/conda/bin/activate /opt/conda/envs/cw-nets \
+        && python build.py
+
+RUN mkdir -p /opt/code/TernausNetV2/weights/ \
+     && /opt/code/gdown.pl/gdown.pl https://drive.google.com/uc?id=1k95VGNZG74Vvu-X-MSpbaHjMDvNEepIi /opt/code/TernausNetV2/weights/deepglobe_buildings.pt
+
+
+
+
+
 
 
 ## Install 
