@@ -2,11 +2,15 @@ from TernausNetV2.models.ternausnet2 import TernausNetV2
 from torchvision.transforms import ToTensor, Normalize, Compose
 import torch
 import cv2
-
+from skimage.morphology import watershed
+import scipy.ndimage as ndimage
+from torch.nn import functional as F
+import numpy as np
+from tqdm import tqdm
 
 def get_model(model_path):
     model = TernausNetV2(num_classes=2)
-    state = torch.load('weights/deepglobe_buildings.pt')
+    state = torch.load(model_path)
     state = {key.replace('module.', ''): value for key, value in state['model'].items()}
 
     model.load_state_dict(state)
@@ -85,12 +89,13 @@ def reform_tile(tile, rollaxis=True):
     return np.concatenate([rgb, tf], axis=2) * (2**8 - 1)
 
 def label_watershed(before, after, component_size=20):
+    print("ndimage")
     markers = ndimage.label(after)[0]
-
+    print('watershed started')
     labels = watershed(-before, markers, mask=before, connectivity=8)
     unique, counts = np.unique(labels, return_counts=True)
 
-    for (k, v) in dict(zip(unique, counts)).items():
+    for (k, v) in tqdm(dict(zip(unique, counts)).items()):
         if v < component_size:
             labels[labels == k] = 0
     return labels
@@ -104,7 +109,7 @@ def get_img_transform():
     
     return img_transform
 
-def predict(model, input_img):
+def predict(model, input_img, pads):
     
     prediction = F.sigmoid(model(input_img)).data[0].cpu().numpy()
     mask = (prediction[0] > 0.5).astype(np.uint8)
