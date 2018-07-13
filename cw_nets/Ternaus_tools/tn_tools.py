@@ -89,13 +89,11 @@ def reform_tile(tile, rollaxis=True):
     return np.concatenate([rgb, tf], axis=2) * (2**8 - 1)
 
 def label_watershed(before, after, component_size=20):
-    print("ndimage")
     markers = ndimage.label(after)[0]
-    print('watershed started')
     labels = watershed(-before, markers, mask=before, connectivity=8)
     unique, counts = np.unique(labels, return_counts=True)
 
-    for (k, v) in tqdm(dict(zip(unique, counts)).items()):
+    for (k, v) in dict(zip(unique, counts)).items():
         if v < component_size:
             labels[labels == k] = 0
     return labels
