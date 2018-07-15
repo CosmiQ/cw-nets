@@ -20,6 +20,7 @@ inst_reqs = ["cw-tiler",
              "tqdm",
              "shapely",
              "rasterio",
+             "opencv-contrib-python-headless"
              "tensorflow-gpu", "keras", "scikit-learn", "torch", "torchvision"]
 
 extra_reqs = {
