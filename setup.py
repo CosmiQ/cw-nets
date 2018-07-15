@@ -19,7 +19,7 @@ inst_reqs = ["cw-tiler",
              "numpy",
              "tqdm",
              "shapely",
-             "rasterio"
+             "rasterio",
              "tensorflow-gpu", "keras", "scikit-learn", "torch", "torchvision"]
 
 extra_reqs = {
