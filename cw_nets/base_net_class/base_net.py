@@ -20,4 +20,6 @@ class base_net():
         
         with rasterio.open(file_path) as src:
             
+
+            
         
