@@ -166,7 +166,8 @@ def process_results_mask(mask_dict_list, outputNameTiff,  delete_tmp=True):
                 data_count += src_count.read()
                 
     
-    #data_mask=(data_mask/data_count).astype(np.uint8)
+    data_mask=(data_mask/data_count).astype(np.uint8)
+    data_mask=data_mask>=1.0
     
     
     with rasterio.open(outputNameTiff,
