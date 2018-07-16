@@ -158,7 +158,7 @@ def createRasterMask(rasterPath,
                         logger.error("Failed cell_section: {}".format(cell_selection))
                         
                         
-                        break
+                        
                         
                         
                         
@@ -172,7 +172,7 @@ def createRasterMask(rasterPath,
             
             mask_dict_list.append(resultDict)
             
-            break
+            
             
             
     return mask_dict_list
@@ -197,7 +197,7 @@ def process_results_mask(mask_dict_list, outputNameTiff,  delete_tmp=True):
                 
     
     data_mask=(data_mask/data_count).astype(np.uint8)
-    data_mask=data_mask>=1.0
+    data_mask=(data_mask>=1.0).astype(np.uint8)
     
     
     with rasterio.open(outputNameTiff,
