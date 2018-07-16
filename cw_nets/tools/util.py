@@ -11,12 +11,18 @@ from cw_tiler import vector_utils
 from cw_nets.Ternaus_tools import tn_tools 
 import numpy as np
 import os
-from tqdm import tqdm
 import random
 import torch
 import json
+import logging
+import time
+import io
+from tqdm import tqdm
+
 # Setting Certificate Location for Ubuntu/Mac OS locations (Rasterio looks for certs in centos locations)
 os.environ['CURL_CA_BUNDLE']='/etc/ssl/certs/ca-certificates.crt'
+
+logger = logging.getLogger(__name__)
 
 
 def get_processing_details(rasterPath, smallExample=False, 
@@ -75,7 +81,12 @@ def createRasterMask(rasterPath,
                      outputName, 
                      dst_profile, 
                      modelPath,
-                    tile_size_pixels):
+                    tile_size_pixels,
+                    logger=None):
+    
+    logger = logger or logging.getLogger(__name__)
+
+    
     
     mask_dict_list = []
     model = tn_tools.get_model(modelPath)
@@ -113,10 +124,10 @@ def createRasterMask(rasterPath,
                     # Break up cell into four gorners
                     ll_x, ll_y, ur_x, ur_y = cell_selection
 
-
-                    # Get Tile from bounding box
+                    
+                        # Get Tile from bounding box
                     tile, mask, window, window_transform = main.tile_utm(src, ll_x, ll_y, ur_x, ur_y, indexes=None, tilesize=tile_size_pixels, nodata=None, alpha=None,
-                                 dst_crs=dst_profile['crs'])
+                                     dst_crs=dst_profile['crs'])
 
 
                     img = tn_tools.reform_tile(tile)
@@ -132,10 +143,27 @@ def createRasterMask(rasterPath,
                         #} 
 
 
-  
-                    dst.write(tn_tools.unpad(predictDict['mask'], pads).astype(np.uint8), window=window, indexes=1)
-                    dst_countour.write(tn_tools.unpad(predictDict['seed'], pads).astype(np.uint8), window=window, indexes=1)
-                    dst_count.write(np.ones(predictDict['labels'].shape).astype(np.uint8), window=window, indexes=1)
+                    try: 
+                        dst.write(tn_tools.unpad(predictDict['mask'], pads).astype(np.uint8), window=window, indexes=1)
+                        dst_countour.write(tn_tools.unpad(predictDict['seed'], pads).astype(np.uint8), window=window, indexes=1)
+                        dst_count.write(np.ones(predictDict['labels'].shape).astype(np.uint8), window=window, indexes=1)
+                    
+                    except (SystemExit, KeyboardInterrupt):
+                        raise
+                    
+                    except Exception:
+                        
+                        logger.error("Failed To write tile:")
+                        logger.error("Failed window: {}".format(window))
+                        logger.error("Failed cell_section: {}".format(cell_selection))
+                        
+                        
+                        break
+                        
+                        
+                        
+                        
+                        
             
             resultDict = {'mask': outputTifMask,
                          'contour': outputTifCountour,
@@ -143,6 +171,8 @@ def createRasterMask(rasterPath,
             
             
             mask_dict_list.append(resultDict)
+            
+            break
             
             
     return mask_dict_list
