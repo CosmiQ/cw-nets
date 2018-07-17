@@ -59,7 +59,7 @@ RUN source /opt/conda/bin/activate /opt/conda/envs/cw-nets && \
         conda install pytorch torchvision cuda91 -c pytorch && \
         conda install opencv scikit-image && \
         pip install git+https://github.com/CosmiQ/cw-tiler.git@dataset_creation && \
-        pip install git+httpsa://github.com/CosmiQ/cw-nets.git@pytorch_generator
+        pip install git+https://github.com/CosmiQ/cw-nets.git@pytorch_generator
         
 
 # Install Perl Script for Google Drive Download
