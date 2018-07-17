@@ -66,7 +66,7 @@ def get_processing_details(rasterPath, smallExample=False,
     
     return rasterBounds, dst_profile
 
-def generate_cells_list_dict(rasterBounds, cell_size_meters, stride_size_meters, tile_size_pixels):
+def generate_cells_list_dict(rasterBounds, cell_size_meters, stride_size_meters, tile_size_pixels, quad_space=True):
     
     cells_list_dict = main.calculate_analysis_grid(rasterBounds.bounds, 
                                                    stride_size_meters=stride_size_meters, 
