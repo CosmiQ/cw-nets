@@ -7,10 +7,10 @@ Segmentation Nets designed for use with SpaceNet datasets and other remote sensi
 
 Example
 ------------
-python create_mask.py --raster_path /nfs/data/Datasets/CosmiQ_SpaceNet_Src/AOI_2_Vegas/srcData/rasterData/AOI_2_Vegas_MUL-PanSharpen_Cloud.tif \
+python create_mask.py --raster_path s3://spacenet-dataset/AOI_2_Vegas/srcData/rasterData/AOI_2_Vegas_MUL-PanSharpen_Cloud.tif \
         --output_name AOI_2_Vegas_v11.tif \
-        --data_output /home/dlindenbaum/ \
-        --model_path /home/dlindenbaum/cosmiqGit/TernausNetV2/weights/deepglobe_buildings.pt \
+        --data_output $OUTPUT_PATH \
+        --model_path weights/deepglobe_buildings.pt \
         --cell_size 200 \
         --stride_size 190 \
         --tile_size 650 
