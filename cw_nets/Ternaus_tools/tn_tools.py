@@ -8,7 +8,7 @@ from torch.nn import functional as F
 import numpy as np
 from tqdm import tqdm
 
-def get_model(model_path):
+def get_model(model_path, useCuda=True):
     model = TernausNetV2(num_classes=2)
     state = torch.load(model_path)
     state = {key.replace('module.', ''): value for key, value in state['model'].items()}
@@ -16,7 +16,7 @@ def get_model(model_path):
     model.load_state_dict(state)
     model.eval()
 
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and useCuda:
         model.cuda()
     return model
 
@@ -123,4 +123,28 @@ def predict(model, input_img, pads):
     
     
     return predictDict
+
+def predict_batch(model, sample, use_cuda=True):
+    
+    predictDictList = []
+    
+    if use_cuda:
+        prediction = F.sigmoid(model(sample['tile'].cuda())).data.cpu()
+    else:
+        prediction = F.sigmoid(model(sample['tile']))
+        
+    
+    for id, predItem in enumerate(prediction):
+        mask = (predItem[0].numpy() > 0.5).astype(np.uint8)
+        contour = (predItem[1].numpy())
+        seed = ((mask * (1 - contour)) > 0.5).astype(np.uint8)
+        labels = label_watershed(mask, seed)
+    
+        predictDictList.append({'mask': predItem[0].numpy(),
+                  'contour': contour,
+                  'seed': seed,
+                  'labels': labels})
+        
+    
+    
     
