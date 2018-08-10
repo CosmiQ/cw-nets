@@ -179,32 +179,45 @@ def createRasterMask(rasterPath,
             
 def process_results_mask(mask_dict_list, outputNameTiff,  delete_tmp=True):
     firstCell = True
+    src_mask_list     = []
+    src_countour_list = []
+    src_count_list    = []
+    
     for resultDict in tqdm(mask_dict_list):
         
-        with rasterio.open(resultDict['mask']) as src_mask, \
-                rasterio.open(resultDict['contour']) as src_seed, \
-                rasterio.open(resultDict['count']) as src_count:
+        
+        src_mask_list.append(rasterio.open(resultDict['mask']))
+        src_countour_list.append(rasterio.open(resultDict['contour'])) 
+        src_count_list.append(rasterio.open(resultDict['count']))
+        
             
-            src_mask_profile = src_mask.profile
+    src_mask_profile = src_mask_list[0].profile
             
-            if firstCell:
-                data_mask = src_mask.read()
-                data_count = src_count.read()
-                firstCell = False
-            else:
-                data_mask += src_mask.read()
-                data_count += src_count.read()
-                
-    
-    data_mask=(data_mask/data_count).astype(np.uint8)
-    data_mask=(data_mask>=1.0).astype(np.uint8)
-    
-    
     with rasterio.open(outputNameTiff,
                                    'w',
                                **src_mask_profile) as dst:
+                
+        windows = [window for ij, window in dst.block_windows()]
+                
+        for window in tqdm(windows):
+            firstCell = True
+            
+            for src_mask, src_contour, src_count in zip(src_mask_list, src_countour_list, src_count_list):
+                
+                if firstCell:
+                    data_mask = src_mask.read(window=window)
+                    data_count = src_count.read(window=window)
+                    firstCell = False
+                else:
+                    data_mask += src_mask.read(window=window)
+                    data_count += src_count.read(window=window)
+            
+
+                data_mask=(data_mask/data_count).astype(np.uint8)
+                data_mask=(data_mask>=1.0).astype(np.uint8)
     
-        dst.write(data_mask)
+    
+                dst.write(data_mask, window=window)
         
     
     resultDict = {'mask': outputNameTiff}
