@@ -1,5 +1,12 @@
-rio-tiler
 cw-tiler
-keras
-tensorflow-gpu
+numpy
+tqdm
 shapely
+rasterio
+opencv-contrib-python-headless
+scikit-image
+scikit-learn
+tensorflow-gpu
+keras
+torch
+torchvision
