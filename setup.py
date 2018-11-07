@@ -15,7 +15,14 @@ with open('README.rst') as f:
     readme = f.read()
 
 # Runtime requirements.
-inst_reqs = ["cw-tiler", "tensorflow-gpu", "keras", "scikit-learn"]
+inst_reqs = ["cw-tiler", 
+             "numpy",
+             "tqdm",
+             "shapely",
+             "rasterio",
+             "opencv-contrib-python-headless",
+             "scikit-image",
+             "tensorflow-gpu", "keras", "scikit-learn", "torch", "torchvision"]
 
 extra_reqs = {
     'test': ['mock', 'pytest', 'pytest-cov', 'codecov'],
@@ -35,6 +42,7 @@ setup(name='cw_nets',
           'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering :: GIS'],
       keywords='segmentation spacenet machinelearning',
+      scripts=['cw_nets/scripts/create_mask.py'],
       author=u"David Lindenbaum",
       author_email='dlindenbaum@iqt.org',
       url='https://github.com/CosmiQ/cw-nets',
