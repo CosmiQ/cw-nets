@@ -1,3 +1,0 @@
-0.0.1 (2018-6-28)
-------------------
-- Initial release. Requires cw-tiler
