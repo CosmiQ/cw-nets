@@ -15,7 +15,7 @@ datagen:
     flip_x: true
     flip_y: true
     rotate: [0, 90, 180, 270]
-    
+
 
 data:
   ###################################
@@ -34,12 +34,12 @@ data:
   val_split: 0.2
   # next two denote paths to val data. only used if val_split == 0.
   val_im_src:
-  val_im_label:
+  val_label_src:
   ###################################
   ### INFERENCE DATA SPECIFICATION ##
   ###################################
   # path to source imagery for inference.
-  infer_src:
+  infer_im_src:
 
 
 output:
