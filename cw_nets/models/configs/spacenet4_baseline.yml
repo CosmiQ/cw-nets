@@ -2,6 +2,7 @@
 model_name: spacenet4_baseline
 model_arch: ternausnetv1
 framework: keras
+model_src:
 train: true
 infer: true
 
@@ -51,6 +52,7 @@ output:
   pred_dest:
 
 training:
+  pretrained: true
   epochs: 1000
   loss: hybrid_bce_jaccard
   optimizer: Nadam
