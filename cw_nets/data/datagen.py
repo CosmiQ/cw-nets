@@ -4,11 +4,41 @@ import numpy as np
 import os
 
 
-def DataGenerator(config):
-    """Create an appropriate data generator based on the config."""
+def DataGenerator(framework, image_path, mask_path, **kwargs):
+    """Create an appropriate data generator based on the framework used.
+
+    Arguments
+    ---------
+    framework : str
+        One of ['keras', 'pytorch', 'simrdwn', 'tf', 'tf_obj_api'], the deep
+        learning framework used for the model to be used.
+    image_path : str
+        Path to the images to feed to the deep learning model.
+    mask_path : str
+        Path to the masks to feed to the deep learning model.
+    **kwargs
+        Additional arguments passed to framework-specific generators. See the
+        arguments to the framework-specific datasets and data generators for
+        details.
+
+    Returns
+    -------
+    A Keras, PyTorch, TensorFlow, or TensorFlow Object Detection API object
+    to feed data during model training or inference.
+    """
+
+    if framework not in ['keras', 'pytorch', 'simrdwn', 'tf', 'tf_obj_api']:
+        raise ValueError('{} is not an accepted value for `framework`'.format(
+            framework))
+    if framework == 'keras':
+        if 'image_shape' not in kwargs:
+            raise ValueError('`image_shape` must be provided as an argument ' +
+                             'when using Keras.')
+        return FileDataGenerator(image_path, mask_path, **kwargs)
 
 
 class FileDataGenerator(keras.utils.Sequence):
+    # TODO: DOCUMENT!
     def __init__(self, image_paths, mask_path, image_shape,
                  traverse_subdirs=False, chip_subset=[], batch_size=32,
                  crop=False, output_x=256, output_y=256, shuffle=True,
