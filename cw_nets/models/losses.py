@@ -2,6 +2,41 @@ from keras import backend as K
 
 # TODO: IMPLEMENT WRAPPER FOR THESE FOR DIFFERENT ML FRAMEWORKS
 
+
+def composite_loss(framework, loss_a, loss_b, alpha, **loss_args):
+    """Generate a composite loss function for model training.
+
+    Arguments
+    ---------
+    framework : str
+        The name of the framework being used for the model.
+    loss_a : function
+        The first loss function.
+    loss_b : function
+        The second loss function.
+    weight_a : numeric, optional
+        The numeric weight for the first loss function. Defaults to 1.
+    weight_b : numeric, optional
+        The numeric weight for the second loss function. Defaults to 1.
+    **loss_args
+        Additional keyword arguments to pass to `loss_a` and `loss_b`.
+
+    Returns
+    -------
+    A composite loss function that can be passed to a model of interest for
+    training.
+
+    """
+    if framework == 'keras':
+        # wrap the individual loss functions and pass the composite to keras
+        def _comp_loss(y_true, y_pred):
+            _loss_a = loss_a(y_true, y_pred, **loss_args)
+            _loss_b = loss_b(y_true, y_pred, **loss_args)
+            return _loss_a * alpha + _loss_b * (1-alpha)
+
+        return _comp_loss
+
+
 def weighted_bce(y_true, y_pred, weight):
     """Weighted binary cross-entropy for Keras.
 

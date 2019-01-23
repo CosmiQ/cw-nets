@@ -24,23 +24,22 @@ data:
   ###################################
 
   # Path to source imagery for training.
-  train_im_src:
-  # should subdirs be traversed recursively to get images?
-  # defaults to yes (true).
-  train_im_recurse: true
+  train_im_src_dirs:
+    -
   # path to labels (masks).
-  train_label_src:
-  train_label_recurse: true
-  # fraction of training data to use for validation. set to zero for pre-split.
-  val_split: 0.2
-  # next two denote paths to val data. only used if val_split == 0.
-  val_im_src:
-  val_label_src:
+  train_label_src_dirs:
+    -
+  # next two denote paths to val data.
+  val_im_src_dirs:
+    -
+  val_label_src_dirs:
+    -
   ###################################
   ### INFERENCE DATA SPECIFICATION ##
   ###################################
   # path to source imagery for inference.
-  infer_im_src:
+  infer_im_src_dirs:
+    -
 
 
 output:

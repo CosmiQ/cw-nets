@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-def DataGenerator(framework, image_path, mask_path, **kwargs):
+def DataGenerator(framework, image_path, mask_path, config):
     """Create an appropriate data generator based on the framework used.
 
     Arguments
@@ -16,10 +16,10 @@ def DataGenerator(framework, image_path, mask_path, **kwargs):
         Path to the images to feed to the deep learning model.
     mask_path : str
         Path to the masks to feed to the deep learning model.
-    **kwargs
-        Additional arguments passed to framework-specific generators. See the
-        arguments to the framework-specific datasets and data generators for
-        details.
+    config
+        Model configuration containing additional arguments
+        passed to framework-specific generators. See the arguments to the
+        framework-specific datasets and data generators for details.
 
     Returns
     -------
@@ -31,14 +31,16 @@ def DataGenerator(framework, image_path, mask_path, **kwargs):
         raise ValueError('{} is not an accepted value for `framework`'.format(
             framework))
     if framework == 'keras':
-        if 'image_shape' not in kwargs:
+        if 'image_shape' not in config:
             raise ValueError('`image_shape` must be provided as an argument ' +
                              'when using Keras.')
-        return FileDataGenerator(image_path, mask_path, **kwargs)
+        return FileDataGenerator(image_path, mask_path, config)
 
 
 class FileDataGenerator(keras.utils.Sequence):
     # TODO: DOCUMENT!
+    # TODO: IMPLEMENT OTHER AUGMENTATION OPTIONS!
+    # TODO: USE EXISTING IMPLEMENTATIONS OF ALL AUGMENTATIONS HERE!
     def __init__(self, image_paths, mask_path, image_shape,
                  traverse_subdirs=False, chip_subset=[], batch_size=32,
                  crop=False, output_x=256, output_y=256, shuffle=True,
