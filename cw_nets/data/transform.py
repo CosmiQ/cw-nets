@@ -4,18 +4,52 @@ Image transformation, augmentation, etc. for use in models.
 
 Where possible, the codebase uses albumentations implementations for transforms
 because they checked various different implementations and use the fastest one.
-However, in some cases the albumentations implementation uses a cv2 backend,
+However, in some cases albumentations uses a cv2 backend,
 which is incompatible with unusual channel counts in imagery, and therefore
 other implementations are used for those functions here.
+
+Functionality used directly from albumentations:
+- Crop
+- VerticalFlip
+- HorizontalFlip
+- Flip
+- Transpose
+- Resize
+- CenterCrop
+- RandomCrop
+- RandomSizedCrop
+- OpticalDistortion
+- GridDistortion
+- ElasticTransform
+- Normalize
+- Cutout
+- HueSaturationValue  # NOTE: CAN ONLY HANDLE RGB 3-CHANNEL!
+- RGBShift  # NOTE: CAN ONLY HANDLE RGB 3-CHANNEL!
+- RandomBrightnessContrast
+- Blur
+- MotionBlur
+- MedianBlur
+- GaussNoise
+- CLAHE
+- RandomGamma
+- ToFloat
+
+Implemented here:
+- Rotate
+- RandomScale
+-
 
 """
 
 import numpy as np
 import albumentations.functional as F
+from albumentations.functional import preserve_channel_dim
 from albumentations.core.transforms_interface import DualTransform, to_tuple
-from PIL.Image import BICUBIC, BILINEAR, HAMMING, NEAREST, LANCZOS
+from albumentations.core.transforms_interface import ImageOnlyTransform
+from PIL.Image import BICUBIC, BILINEAR, HAMMING, NEAREST, LANCZOS, AFFINE
 from Pillow import Image
 from scipy import ndimage as ndi
+import cv2
 
 
 class Rotate(DualTransform):
@@ -138,6 +172,113 @@ class RandomScale(DualTransform):
         raise NotImplementedError
 
 
+# NOTE ON THE ShiftScaleRotate CLASS BELOW:
+# Aside from cv2, there is currently no good implementation that enables
+# handling the border in any way other than filling. I'm not 100% sure this
+# is going to work for >3-channel images but we're going to roll the dice for
+# now.
+
+# class ShiftScaleRotate(DualTransform):
+#     """Shift/scale/rotate using Pillow.
+#
+#     Arguments
+#     ---------
+#     scale_limits : `int` or `tuple`, optional
+#         Limits of re-scaling amount, in fraction of starting size. If an `int`
+#         is passed, the image size will be rescaled randomly in the range
+#         ``(1-scale_limits, 1+scale_limits)``. If a 2-tuple is provided, both
+#         x and y scaling will have values drawn from
+#         ``np.random.uniform(scale_limits[0], scale_limits[1])``. If a 4-tuple
+#         is provided, x scaling will be selected from
+#         ``np.random.uniform(scale_limits[0], scale_limits[1])``, and y scaling
+#         will be selected from
+#         ``np.random.uniform(scale_limits[2], scale_limits[3]).`` To maintain
+#         aspect ratio, use `lock_aspect=True` (has no effect if a 4-tuple is
+#         provided). If not passed, image is not scaled.
+#     lock_aspect : bool, optional
+#         Should aspect ratio be locked to the input ratio? Defaults to no
+#         (``True``). If ``True`` and a 4-tuple is passed for `scale_limits`,
+#         `lock_aspect` is ignored.
+#     rotation_limits : `int` or 2-`tuple`, optional
+#         Limit of degrees of rotation of the image. If an integer, then the
+#         image will be rotated an angle randomly selected from
+#         ``range(-rotation_limits, rotation_limits)`` degrees.
+#         If a tuple of form ``(min_rotation, max_rotation)``, the image will be
+#         rotated an angle randomly selected from
+#         ``range(min_rotation, max_rotation)``. Defaults to 0 (no rotation).
+#     translation_limits: int or 2-tuple, optional
+#         Magnitude of x and y translations to perform in pixels. If a single int
+#         is provided, both x and y translation will be selected from the random
+#         uniform range of ``([-limit, +limit])``. If a 2-tuple
+#         ``(x_limit, y_limit)`` is provided, the limits are set separately based
+#         on the provided tuple.
+#     interpolation : str, optional
+#         Interpolation method to use for resizing. One of
+#         ``['bilinear', 'bicubic', or 'nearest']``.
+#         Defaults to ``'bicubic'``. See the Pillow_ documentation for more
+#         information.
+#     p : float [0, 1], optional
+#         Probability that the augmentation is performed to each image. Defaults
+#         to ``0.5``.
+#
+#     .. _: https://pillow.readthedocs.io/en/4.1.x/handbook/concepts.html#filters-comparison-table
+#     """
+#     def __init__(self, size=None, scale_limits=0, lock_aspect=True,
+#                  rotation_limits=0, translation_limits=0,
+#                  interpolation="bicubic", p=0.5, always_apply=False):
+#         super(ShiftScaleRotate, self).__init__(always_apply, p)
+#         self.lock_aspect = lock_aspect
+#         if type(scale_limits) == float:
+#             self.scale_limits = (1-scale_limits, 1+scale_limits,
+#                                  1-scale_limits, 1+scale_limits)
+#         elif type(scale_limits) == tuple:
+#             if len(scale_limits) == 2:
+#                 self.scale_limits = (scale_limits[0], scale_limits[1],
+#                                      scale_limits[0], scale_limits[1])
+#             elif len(scale_limits == 4):
+#                 self.scale_limits = scale_limits
+#                 self.lock_aspect = False  # force if a 4-tuple was provided
+#             else:
+#                 raise ValueError(
+#                     "len(scale_limits) must be len 2 or 4 if it's a tuple.")
+#         else:
+#             raise TypeError('scale_limits must be a float or tuple.')
+#         self.rotation_limits = to_tuple(rotation_limits)
+#         self.translation_limits = to_tuple(translation_limits)
+#         if interpolation == 'bicubic':
+#             self.interpolation = BICUBIC
+#         elif interpolation == 'bilinear':
+#             self.interpolation = BILINEAR
+#         elif interpolation == 'nearest':
+#             self.interpolation = NEAREST
+#         else:
+#             raise ValueError(
+#                 'The interpolation argument is not one of: ' +
+#                 '["bicubic", "bilinear", "nearest"]')
+#
+#         def apply(self, img, angle=0, scale=0, dx=0, dy=0,
+#                   interpolation=self.interpolation, **params):
+#
+#
+#
+#         def get_params(self):  # parameters to use in apply()
+#             param_dict = {
+#                 'angle': np.random.uniform(self.rotation_limits[0],
+#                                            self.rotation_limits[1]),
+#                 'xscale': np.random.uniform(1+self.scale_limits[0],
+#                                             1+self.scale_limits[1]),
+#                 'yscale': np.random.uniform(1+self.scale_limits[2],
+#                                             1+self.scale_limits[3]),
+#                 'dx': np.random.randint(self.translation_limits[0],
+#                                         self.translation_limits[1]),
+#                 'dy': np.random.randint(self.translation_limits[0],
+#                                         self.translation_limits[1])}
+#             if self.lock_aspect:  # reset param_dict['yscale'] to same as x
+#                 param_dict['yscale'] = param_dict['xscale']
+#             return param_dict
+
+
+@preserve_channel_dim
 def scale(im, scale_x, scale_y, interpolation):
     """Scale an image using Pillow."""
     im_shape = im.shape
@@ -145,3 +286,22 @@ def scale(im, scale_x, scale_y, interpolation):
     x_size = int(scale_x*im_shape[1])
     return np.array(Image.fromarray(im).resize((x_size, y_size),
                                                interpolation))
+
+
+# see note above the ShiftScaleRotate class.
+# @preserve_channel_dim
+# def shift_scale_rotate(img, angle, xscale, yscale, dx, dy,
+#                        interpolation=BICUBIC, border_mode='reflect'):
+#         if type(img) != Image:
+#             pillow_im = Image.fromarray(img)
+#         else:
+#             pillow_im = img
+#         height, width = img.shape[:2]
+#         center = (width/2, height/2)
+#         #
+#         matrix = cv2.getRotationMatrix2D(center, angle, scale)
+#         matrix[0, 2] += dx
+#         matrix[1, 2] += dy
+#         pillow_im = pillow_im.transform(
+#             size=(int(xscale*img.size[0]), int(yscale*img.size[1])), AFFINE,
+#             data=matrix, resample=interpolation,)
