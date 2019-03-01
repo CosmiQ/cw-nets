@@ -8,6 +8,9 @@ However, in some cases albumentations uses a cv2 backend,
 which is incompatible with unusual channel counts in imagery, and therefore
 other implementations are used for those functions here.
 
+Note: Some augmentations are unavailable in this library. This is intentional.
+
+
 Functionality used directly from albumentations:
 - Crop
 - VerticalFlip
@@ -172,6 +175,38 @@ class RandomScale(DualTransform):
         raise NotImplementedError
 
 
+def Cutout(ImageOnlyTransform):
+    """CoarseDropout of the square regions in the image.
+
+    This is a slightly optimized version of the albumentations implementation.
+
+    Arguments
+    ---------
+    num_holes : int
+        number of regions to zero out
+    h_size : int
+        height of the hole
+    w_size : int
+        width of the hole
+
+    Targets:
+        image
+
+    Image types:
+        uint8, float32
+    """
+    def __init__(self, num_holes=8, max_h_size=8, max_w_size=8,
+                 always_apply=False, p=0.5):
+        super(Cutout, self).__init__(always_apply, p)
+        self.num_holes = num_holes
+        self.max_h_size = max_h_size
+        self.max_w_size = max_w_size
+
+    def apply(self, image, **params):
+        return F.cutout(image, self.num_holes,
+                        self.max_h_size, self.max_w_size)
+
+
 # NOTE ON THE ShiftScaleRotate CLASS BELOW:
 # Aside from cv2, there is currently no good implementation that enables
 # handling the border in any way other than filling. I'm not 100% sure this
@@ -287,6 +322,19 @@ def scale(im, scale_x, scale_y, interpolation):
     return np.array(Image.fromarray(im).resize((x_size, y_size),
                                                interpolation))
 
+
+def cutout(img, num_holes, h_size, w_size):
+    img = img.copy()
+    height, width = img.shape[:2]
+    ys = np.random.randint(0, height, num_holes)
+    xs = np.random.randint(0, width, num_holes)
+    y1s = np.clip((ys-h_size//2), 0, height)
+    y2s = np.clip((ys+h_size//2), 0, height)
+    x1s = np.clip((xs-h_size//2), 0, width)
+    x2s = np.clip((xs+h_size//2), 0, width)
+    for n in range(num_holes):
+        img[y1s[n]:y2s[n], x1s[n]:x2s[n]] = 0
+    return img
 
 # see note above the ShiftScaleRotate class.
 # @preserve_channel_dim
