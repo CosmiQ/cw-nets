@@ -2,6 +2,9 @@ import keras
 import cv2
 import numpy as np
 import os
+import pandas as pd
+from torch.utils.data import Dataset, DataLoader
+from skimage import io
 
 
 def DataGenerator(framework, image_path, mask_path, **kwargs):
@@ -231,6 +234,46 @@ class FileDataGenerator(keras.utils.Sequence):
                     y)
             self.output_ctr += 1
         return X, y
+
+
+class TorchDataset(Dataset):
+    """A PyTorch dataset object for segmentation/object detection.
+
+    Arguments
+    ---------
+    reference_csv: str
+        Path to a csv file with at least two columns: ``'image_path'``
+        that denotes the paths to the source imagery and ``'label_path'``
+        that denotes the paths to their corresponding labels.
+    aug_pipeline : :py:class:`torchvision.transforms` or :py:class:`albumentations.core.transforms_interface.Compose`
+        An augmentation pipeline object compatible with PyTorch. Not required
+         if not performing any augmentation or post-processing on the image.
+    """
+    def __init__(self, reference_csv, aug_pipeline=None):
+        super(self, TorchDataset).__init__()
+        self.dataset_ref = pd.read_csv(reference_csv)
+        self.aug_pipeline = aug_pipeline
+
+    def __len__(self):
+        return len(self.dataset_ref)
+
+    def __getitem__(self, idx):
+        img_fname = self.dataset_ref['image_path'].iloc[idx]
+        label_fname = self.dataset_ref['label_path'].iloc[idx]
+        image = io.imread(img_fname)
+        if os.path.splitext(label_fname)[1].lower() in ['gif', 'tiff', 'tif',
+                                                        'geotiff' 'png',
+                                                        'jpg']:
+            label = io.imread(label_fname)
+        else:
+            raise NotImplementedError(
+                'Non-image labels are not currently implemented.')
+        sample = {'image': image, 'label': label}
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
 
 
 def get_files_recursively(image_path, traverse_subdirs=False):
