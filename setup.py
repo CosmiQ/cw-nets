@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 version = '0.0.1'
 
 # Runtime requirements.
-inst_reqs = ["keras", "opencv-python", 'numpy', 'pyyaml']  # TODO: UPDATE!
+inst_reqs = ["keras", "opencv-python", 'numpy', 'pyyaml', 'albumentations']  # TODO: UPDATE!
 
 extra_reqs = {
     'test': ['mock', 'pytest', 'pytest-cov', 'codecov']}

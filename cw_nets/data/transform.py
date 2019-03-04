@@ -47,8 +47,8 @@ from PIL.Image import BICUBIC, BILINEAR, HAMMING, NEAREST, LANCZOS
 from PIL import Image
 from scipy import ndimage as ndi
 
-import albumentations.functional as F
-from albumentations.functional import preserve_channel_dim
+from albumentations.augmentations import functional as F
+from albumentations.augmentations.functional import preserve_channel_dim
 from albumentations.core.transforms_interface import DualTransform, to_tuple
 from albumentations.core.transforms_interface import ImageOnlyTransform
 from albumentations.augmentations.transforms import Crop, VerticalFlip,       \
@@ -375,7 +375,7 @@ def build_pipeline(config):
     return train_aug_pipeline, val_aug_pipeline
 
 
-def get_augs(aug_dict, meta_augs_list=['oneof', 'oneorother']):
+def process_pipeline_dict(pipeline_dict, meta_augs_list=['oneof', 'oneorother']):
     """Create a Compose object from an augmentation config dict.
 
     Notes
@@ -386,7 +386,8 @@ def get_augs(aug_dict, meta_augs_list=['oneof', 'oneorother']):
     Arguments
     ---------
     aug_dict : dict
-        A subdict from the ``config`` object derived from a config .yaml.
+        The ``'training_augmentation'`` or ``'validation_augmentation'``
+        sub-dict from the ``config`` object.
     meta_augs_list : dict, optional
         The list of augmentation names that correspond to "meta-augmentations"
         in all lowercase (e.g. ``oneof``, ``oneorother``). This will be used to
@@ -394,23 +395,53 @@ def get_augs(aug_dict, meta_augs_list=['oneof', 'oneorother']):
 
     Returns
     -------
-    aug_pipeline : ``Compose`` instance
+    ``Compose`` instance
         The composed augmentation pipeline.
     """
-    p = aug_dict.get('p', 1.0)  # probability of applying augs in pipeline.
-    xforms = aug_dict['augmentations']  # this should be a list
-    composer_list = []
-    for aug, params in xforms.items():
-        if aug.lower() in meta_augs_list:  # recurse into sub-dict
-            composer_list.append(get_augs(aug_dict[aug], meta_augs_list))
-        composer_list.append(_get_aug(aug, params))
+    p = pipeline_dict.get('p', 1.0)  # probability of applying augs in pipeline
+    xforms = pipeline_dict['augmentations']
+    composer_list = get_augs(xforms)
     return Compose(composer_list, p=p)
+
+
+def get_augs(aug_dict, meta_augs_list=['oneof', 'oneorother']):
+    """Get the set of augmentations contained in a dict.
+
+    aug_dict : dict
+        The ``'augmentations'`` sub-dict of a ``'training_augmentation'`` or
+        ``'validation_augmentation'`` item in the ``'config'`` object.
+        sub-dict from the ``config`` object.
+    meta_augs_list : dict, optional
+        The list of augmentation names that correspond to "meta-augmentations"
+        in all lowercase (e.g. ``oneof``, ``oneorother``). This will be used to
+        find augmentation dictionary items that need further parsing.
+
+    Returns
+    -------
+    list
+        `list` of augmentations to pass to a ``Compose`` object.
+    """
+    aug_list = []
+    for aug, params in aug_dict.items():
+        if aug.lower() in meta_augs_list:
+            # recurse into sub-dict
+            aug_list.append(aug_matcher[aug](get_augs(aug_dict[aug])))
+        else:
+            aug_list.append(_get_aug(aug, params))
+    return aug_list
 
 
 def _get_aug(aug, params):
     """Get augmentations (recursively if needed) from items in the aug_dict."""
     aug_obj = aug_matcher[aug.lower()]
-    return aug_obj(**params)
+    if params is None:
+        return aug_obj()
+    elif isinstance(params, dict):
+        return aug_obj(**params)
+    else:
+        raise ValueError(
+            '{} is not a valid aug param (must be dict of args)'.format(params)
+            )
 
 
 aug_matcher = {
