@@ -35,7 +35,6 @@ Functionality used directly from albumentations:
 - CLAHE
 - RandomGamma
 - ToFloat
-- Noop
 
 Implemented here:
 - Rotate
@@ -50,8 +49,8 @@ from scipy import ndimage as ndi
 
 from albumentations.augmentations import functional as F
 from albumentations.augmentations.functional import preserve_channel_dim
-from albumentations.core.transforms_interface import DualTransform, to_tuple, \
-    ImageOnlyTransform, Noop
+from albumentations.core.transforms_interface import DualTransform, to_tuple
+from albumentations.core.transforms_interface import ImageOnlyTransform
 from albumentations.augmentations.transforms import Crop, VerticalFlip,       \
     HorizontalFlip, Flip, Transpose, Resize, CenterCrop, RandomCrop,          \
     RandomSizedCrop, OpticalDistortion, GridDistortion, ElasticTransform,     \
@@ -66,8 +65,8 @@ __all__ = ['Crop', 'VerticalFlip', 'HorizontalFlip', 'Flip', 'Transpose',
            'Normalize', 'HueSaturationValue', 'RGBShift',
            'RandomBrightnessContrast', 'Blur', 'MotionBlur', 'MedianBlur',
            'GaussNoise', 'CLAHE', 'RandomGamma', 'ToFloat', 'Rotate',
-           'RandomScale', 'Cutout', 'Compose', 'OneOf', 'OneOrOther', 'Noop',
-           'process_pipeline_dict', 'get_augs', 'build_pipeline']
+           'RandomScale', 'Cutout', 'build_pipeline', 'Compose', 'OneOf',
+           'OneOrOther', 'get_augs']
 
 
 class Rotate(DualTransform):
@@ -457,5 +456,5 @@ aug_matcher = {
     'blur': Blur, 'motionblur': MotionBlur, 'medianblur': MedianBlur,
     'gaussnoise': GaussNoise, 'clahe': CLAHE, 'randomgamma': RandomGamma,
     'tofloat': ToFloat, 'rotate': Rotate, 'randomscale': RandomScale,
-    'cutout': Cutout, 'oneof': OneOf, 'oneorother': OneOrOther, 'noop': Noop
+    'cutout': Cutout, 'oneof': OneOf, 'oneorother': OneOrOther
 }
