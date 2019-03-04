@@ -25,7 +25,6 @@ Functionality used directly from albumentations:
 - GridDistortion
 - ElasticTransform
 - Normalize
-- Cutout
 - HueSaturationValue  # NOTE: CAN ONLY HANDLE RGB 3-CHANNEL!
 - RGBShift  # NOTE: CAN ONLY HANDLE RGB 3-CHANNEL!
 - RandomBrightnessContrast
@@ -40,19 +39,34 @@ Functionality used directly from albumentations:
 Implemented here:
 - Rotate
 - RandomScale
--
-
+- Cutout
 """
 
 import numpy as np
+from PIL.Image import BICUBIC, BILINEAR, HAMMING, NEAREST, LANCZOS
+from PIL import Image
+from scipy import ndimage as ndi
+
 import albumentations.functional as F
 from albumentations.functional import preserve_channel_dim
 from albumentations.core.transforms_interface import DualTransform, to_tuple
 from albumentations.core.transforms_interface import ImageOnlyTransform
-from PIL.Image import BICUBIC, BILINEAR, HAMMING, NEAREST, LANCZOS, AFFINE
-from Pillow import Image
-from scipy import ndimage as ndi
-import cv2
+from albumentations.augmentations.transforms import Crop, VerticalFlip,       \
+    HorizontalFlip, Flip, Transpose, Resize, CenterCrop, RandomCrop,          \
+    RandomSizedCrop, OpticalDistortion, GridDistortion, ElasticTransform,     \
+    Normalize, HueSaturationValue, RGBShift, RandomBrightnessContrast,\
+    Blur, MotionBlur, MedianBlur, GaussNoise, CLAHE, RandomGamma, ToFloat
+from albumentations.core.composition import Compose, OneOf, OneOrOther
+
+
+__all__ = ['Crop', 'VerticalFlip', 'HorizontalFlip', 'Flip', 'Transpose',
+           'Resize', 'CenterCrop', 'RandomCrop', 'RandomSizedCrop',
+           'OpticalDistortion', 'GridDistortion', 'ElasticTransform',
+           'Normalize', 'HueSaturationValue', 'RGBShift',
+           'RandomBrightnessContrast', 'Blur', 'MotionBlur', 'MedianBlur',
+           'GaussNoise', 'CLAHE', 'RandomGamma', 'ToFloat', 'Rotate',
+           'RandomScale', 'Cutout', 'build_pipeline', 'Compose', 'OneOf',
+           'OneOrOther', 'get_augs']
 
 
 class Rotate(DualTransform):
@@ -175,7 +189,7 @@ class RandomScale(DualTransform):
         raise NotImplementedError
 
 
-def Cutout(ImageOnlyTransform):
+class Cutout(ImageOnlyTransform):
     """CoarseDropout of the square regions in the image.
 
     This is a slightly optimized version of the albumentations implementation.
@@ -336,20 +350,80 @@ def cutout(img, num_holes, h_size, w_size):
         img[y1s[n]:y2s[n], x1s[n]:x2s[n]] = 0
     return img
 
-# see note above the ShiftScaleRotate class.
-# @preserve_channel_dim
-# def shift_scale_rotate(img, angle, xscale, yscale, dx, dy,
-#                        interpolation=BICUBIC, border_mode='reflect'):
-#         if type(img) != Image:
-#             pillow_im = Image.fromarray(img)
-#         else:
-#             pillow_im = img
-#         height, width = img.shape[:2]
-#         center = (width/2, height/2)
-#         #
-#         matrix = cv2.getRotationMatrix2D(center, angle, scale)
-#         matrix[0, 2] += dx
-#         matrix[1, 2] += dy
-#         pillow_im = pillow_im.transform(
-#             size=(int(xscale*img.size[0]), int(yscale*img.size[1])), AFFINE,
-#             data=matrix, resample=interpolation,)
+
+def build_pipeline(config):
+    """Create an augmentation pipeline from a config object.
+
+    Arguments
+    ---------
+    config : dict
+        A configuration dictionary created by parsing a .yaml config file.
+        See documentation to the project.
+
+    Returns
+    -------
+    Two ``albumentations.core.composition.Compose`` instances with the entire
+    augmentation pipeline assembled: one for training and one for validation/
+    inference.
+    """
+
+    train_aug_dict = config['training_augmentation']
+    val_aug_dict = config['validation_augmentation']
+    train_aug_pipeline = get_augs(train_aug_dict)
+    val_aug_pipeline = get_augs(val_aug_dict)
+
+    return train_aug_pipeline, val_aug_pipeline
+
+
+def get_augs(aug_dict, meta_augs_list=['oneof', 'oneorother']):
+    """Create a Compose object from an augmentation config dict.
+
+    Notes
+    -----
+    See the documentation for instructions on formatting the config .yaml to
+    enable utilization by get_augs.
+
+    Arguments
+    ---------
+    aug_dict : dict
+        A subdict from the ``config`` object derived from a config .yaml.
+    meta_augs_list : dict, optional
+        The list of augmentation names that correspond to "meta-augmentations"
+        in all lowercase (e.g. ``oneof``, ``oneorother``). This will be used to
+        find augmentation dictionary items that need further parsing.
+
+    Returns
+    -------
+    aug_pipeline : ``Compose`` instance
+        The composed augmentation pipeline.
+    """
+    p = aug_dict.get('p', 1.0)  # probability of applying augs in pipeline.
+    xforms = aug_dict['augmentations']  # this should be a list
+    composer_list = []
+    for aug, params in xforms.items():
+        if aug.lower() in meta_augs_list:  # recurse into sub-dict
+            composer_list.append(get_augs(aug_dict[aug], meta_augs_list))
+        composer_list.append(_get_aug(aug, params))
+    return Compose(composer_list, p=p)
+
+
+def _get_aug(aug, params):
+    """Get augmentations (recursively if needed) from items in the aug_dict."""
+    aug_obj = aug_matcher[aug.lower()]
+    return aug_obj(**params)
+
+
+aug_matcher = {
+    'crop': Crop, 'centercrop': CenterCrop, 'randomcrop': RandomCrop,
+    'randomsizedcrop': RandomSizedCrop, 'verticalflip': VerticalFlip,
+    'horizontalflip': HorizontalFlip, 'flip': Flip, 'transpose': Transpose,
+    'resize': Resize, 'centercrop': CenterCrop, 'randomcrop': RandomCrop,
+    'randomsizedcrop': RandomSizedCrop, 'opticaldistortion': OpticalDistortion,
+    'griddistortion': GridDistortion, 'elastictransform': ElasticTransform,
+    'normalize': Normalize, 'huesaturationvalue': HueSaturationValue,
+    'rgbshift': RGBShift, 'randombrightnesscontrast': RandomBrightnessContrast,
+    'blur': Blur, 'motionblur': MotionBlur, 'medianblur': MedianBlur,
+    'gaussnoise': GaussNoise, 'clahe': CLAHE, 'randomgamma': RandomGamma,
+    'tofloat': ToFloat, 'rotate': Rotate, 'randomscale': RandomScale,
+    'cutout': Cutout, 'oneof': OneOf, 'oneorother': OneOrOther
+}
