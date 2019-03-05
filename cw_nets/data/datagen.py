@@ -241,7 +241,7 @@ class TorchDataset(Dataset):
 
     Arguments
     ---------
-    reference_csv: str
+    reference_csv : str
         Path to a csv file with at least two columns: ``'image_path'``
         that denotes the paths to the source imagery and ``'label_path'``
         that denotes the paths to their corresponding labels.

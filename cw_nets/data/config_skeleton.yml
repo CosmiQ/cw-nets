@@ -27,6 +27,8 @@ data_specs:
                      # 1, indicates the fraction of training data that's held
                      # out for validation (and validation_data_csv will be
                      # ignored)
+  data_workers:  # number of cpu threads to use for loading and preprocessing
+                 # input images.
 #  other_inputs:  # this can provide a list of additional inputs to pass to the
                  # neural net for training. These inputs should be specified in
                  # extra columns of the csv files (denoted below), either as
