@@ -13,7 +13,7 @@ dependencies:
   - pillow
   - pandas
   - scikit-image
+  - tensorflow
   - pip:
-    - tensorflow
     - albumentations
     - keras
