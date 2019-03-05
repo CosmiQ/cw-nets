@@ -90,9 +90,9 @@ def preprocess_im_arr(im_arr, im_format):
 
     # TODO: I'd like to find a better way to implement the following steps,
     # ideally by automatically determining the dtype. This could be tricky,
-    # however, for images with large floating point values (i.e. is an) image
+    # however, for images with large floating point values (i.e. is an image
     # with float values up to 245.556 actually supposed to be 8-bit or is it
-    # a 16-bit that happens to have a low range of values?
+    # a 16-bit that happens to have a low range of values)?
 
     if im_format == 'uint8':
         return im_arr.astype('uint8')  # just to be sure
