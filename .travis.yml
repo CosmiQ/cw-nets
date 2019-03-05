@@ -1,9 +1,13 @@
 language: python
-sudo: false
 python:
-  - "2.7"
-  - "3.6"
-  - "3.7"
+  - 2.7
+  - 3.6
+# following required for python 3.7 functionality
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 
 # command to install dependencies
 install:
